@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+// Enums
+// ------------------------------------------------------------
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum category_type {
+  income
+  expense
+}
+
+enum transaction_type {
+  income
+  expense
+}
+
+// ------------------------------------------------------------
+// Users
+// ------------------------------------------------------------
+
+model Users {
+  user_id    Int      @id @default(autoincrement())
+  email      String   @unique
+  first_name String
+  last_name  String
+  username   String   @unique
+  DOB        DateTime
+  password   String
+  role       UserRole @default(USER)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  is_active  Boolean  @default(true)
+
+  // Relations
+  categories            categories[]
+  groups_created        groups[]                @relation("GroupCreatedBy")
+  group_members         group_members[]
+  personal_transactions personal_transactions[]
+  group_expenses        group_expenses[]        @relation("GroupExpensePayer")
+  expense_splits        expense_splits[]
+  group_balances_from   group_balances[]        @relation("BalanceFrom")
+  group_balances_to     group_balances[]        @relation("BalanceTo")
+  //Budget                Budget[]
+  Savings               Savings[]
+}
+
+// ------------------------------------------------------------
+// Categories
+// ------------------------------------------------------------
+model categories {
+  category_id      Int                     @id @default(autoincrement())
+  user_id          Int
+  name             String                  @db.VarChar(100)
+  type             category_type
+  description      String?
+  created_at       DateTime                @default(now()) @db.Timestamptz
+  total_budget     Int
+  amount_spent     Int                     @default(0)
+  amount_remaining Int?
+  // Relations
+  user             Users                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  transactions     personal_transactions[]
+
+  @@unique([user_id, name, type], name: "uq_categories_user_name_type")
+}
+
+// ------------------------------------------------------------
+// Groups
+// ------------------------------ ------------------------------
+model groups {
+  group_id    Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  description String?
+  created_by  Int?
+  created_at  DateTime @default(now()) @db.Timestamptz
+  updated_at  DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  creator  Users?           @relation("GroupCreatedBy", fields: [created_by], references: [user_id], onDelete: SetNull)
+  members  group_members[]
+  expenses group_expenses[]
+  balances group_balances[]
+}
+
+// ------------------------------------------------------------
+// Group Members
+// ------------------------------------------------------------
+model group_members {
+  group_id  Int
+  user_id   Int
+  joined_at DateTime @default(now()) @db.Timestamptz
+  is_admin  Boolean  @default(false)
+
+  // Relations
+  group groups @relation(fields: [group_id], references: [group_id], onDelete: Cascade)
+  user  Users  @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@id([group_id, user_id])
+  @@index([user_id], name: "ix_group_members_user")
+}
+
+// ------------------------------------------------------------
+// Personal Transactions
+// ------------------------------------------------------------
+model personal_transactions {
+  transaction_id    Int              @id @default(autoincrement())
+  user_id           Int
+  category_id       Int?
+  amount            Decimal          @db.Decimal(12, 2)
+  type              transaction_type
+  //budget_id         Int?
+  savings_id        Int?
+  description       String?
+  transaction_date  DateTime         @default(now()) @db.Date
+  receipt_type      String?          @db.VarChar(50)
+  raw_invoice_id    String?          @db.VarChar(100)
+  payee_name        String?
+  payer_name        String?
+  scanned_at        DateTime?        @db.Timestamptz
+  receipt_image_url String?
+  created_at        DateTime         @default(now()) @db.Timestamptz
+  updated_at        DateTime         @default(now()) @db.Timestamptz
+
+  // Relations
+  user              Users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  category          categories? @relation(fields: [category_id], references: [category_id], onDelete: SetNull)
+  //budget            Budget?     @relation(fields: [budget_id], references: [budget_id], onDelete: SetNull)
+  Savings           Savings?    @relation(fields: [savings_id], references: [savings_id])
+  savingsSavings_id Int?
+}
+
+// ------------------------------------------------------------
+// Group Expenses
+// ------------------------------------------------------------
+model group_expenses {
+  expense_id    Int      @id @default(autoincrement())
+  group_id      Int
+  payer_user_id Int?
+  description   String?
+  total_amount  Decimal  @db.Decimal(12, 2)
+  expense_date  DateTime @default(now()) @db.Date
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  group  groups           @relation(fields: [group_id], references: [group_id], onDelete: Cascade)
+  payer  Users?           @relation("GroupExpensePayer", fields: [payer_user_id], references: [user_id], onDelete: SetNull)
+  splits expense_splits[]
+}
+
+// ------------------------------------------------------------
+// Expense Splits
+// ------------------------------------------------------------
+model expense_splits {
+  split_id     Int      @id @default(autoincrement())
+  expense_id   Int
+  user_id      Int
+  share_amount Decimal  @db.Decimal(12, 2)
+  is_paid      Boolean  @default(false)
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  expense group_expenses @relation(fields: [expense_id], references: [expense_id], onDelete: Cascade)
+  user    Users          @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([expense_id, user_id], name: "uq_expense_splits_expense_user")
+  @@index([user_id], name: "ix_expense_splits_user")
+}
+
+// ------------------------------------------------------------
+// Group Balances
+// ------------------------------------------------------------
+model group_balances {
+  balance_id   Int      @id @default(autoincrement())
+  group_id     Int
+  from_user_id Int
+  to_user_id   Int
+  amount_owed  Decimal  @default(0.00) @db.Decimal(12, 2)
+  last_updated DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  group     groups @relation(fields: [group_id], references: [group_id], onDelete: Cascade)
+  from_user Users  @relation("BalanceFrom", fields: [from_user_id], references: [user_id], onDelete: Cascade)
+  to_user   Users  @relation("BalanceTo", fields: [to_user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([group_id, from_user_id, to_user_id], name: "uq_group_balances_triplet")
+  @@index([from_user_id], name: "ix_group_balances_from")
+  @@index([to_user_id], name: "ix_group_balances_to")
+}
+
+// ------------------------------------------------------------
+// Budget
+// ------------------------------------------------------------
+//model Budget {
+// budget_id             Int                     @id @default(autoincrement())
+//  name                  String
+//  description           String?
+//  total_budget          Int
+//  amount_spent          Int                     @default(0)
+//  amount_remaining      Int?
+//  user_id               Int
+//  user                  Users                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+// personal_transactions personal_transactions[]
+//}
+
+// ------------------------------------------------------------
+// Savings
+// ------------------------------------------------------------
+model Savings {
+  savings_id            Int                     @id @default(autoincrement())
+  name                  String
+  description           String?
+  total_savings         Int
+  amount_saved          Int                     @default(0)
+  amount_remaining      Int
+  user_id               Int
+  user                  Users                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  personal_transactions personal_transactions[]
+}
