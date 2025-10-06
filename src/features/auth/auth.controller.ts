@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Request,
   ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -31,6 +32,19 @@ export class AuthController {
       console.log(error);
       throw error;
     }
+  }
+
+  @Get('verify')
+  verify(@Request() req: any) {
+    return this.authService.verifyToken(
+      req.headers.authorization.split(' ')[1],
+    );
+  }
+
+  @Post('refresh')
+  refresh(@Body() body: any) {
+    const { refresh_token } = body;
+    return this.authService.refresh(refresh_token);
   }
 
   @Post('login')

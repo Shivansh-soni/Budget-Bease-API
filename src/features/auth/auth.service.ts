@@ -33,24 +33,24 @@ export class AuthService {
         ...rest,
         password: hashedPassword,
       });
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        { id: user.user_id, email: user.email },
-        { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
-      ),
-      this.jwtService.signAsync(
-        { id: user.user_id, email: user.email },
-        { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
-      ),
-    ]);
-    // console.log(accessToken, refreshToken);
-    this.logger.log('Access token: ', accessToken);
-    this.logger.log('Refresh token: ', refreshToken);
-    this.logger.log(
-      `${user.first_name + ' ' + user.last_name} registered recently.`,
-    );
+      const [accessToken, refreshToken] = await Promise.all([
+        this.jwtService.signAsync(
+          { id: user.user_id, email: user.email },
+          { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
+        ),
+        this.jwtService.signAsync(
+          { id: user.user_id, email: user.email },
+          { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
+        ),
+      ]);
+      // console.log(accessToken, refreshToken);
+      this.logger.log('Access token: ', accessToken);
+      this.logger.log('Refresh token: ', refreshToken);
+      this.logger.log(
+        `${user.first_name + ' ' + user.last_name} registered recently.`,
+      );
 
-    return { user, access_token: accessToken, refresh_token: refreshToken };
+      return { user, access_token: accessToken, refresh_token: refreshToken };
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
@@ -113,6 +113,40 @@ export class AuthService {
    */
   findAll() {
     return `This action returns all auth`;
+  }
+
+  async refresh(token: string) {
+    const decoded = this.jwtService.decode(token);
+
+    const user: any = await this.usersService.findOne(+decoded.id);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const accessToken = await this.jwtService.signAsync(
+      {
+        id: user.user_id,
+        email: user.email,
+        name: user.first_name + ' ' + user.last_name,
+        role: user.role,
+      },
+      {
+        expiresIn: '1h',
+        secret: process.env.JWT_SECRET,
+      },
+    );
+    return { access_token: accessToken };
+  }
+
+  async verifyToken(token: string) {
+    const decoded = await this.jwtService.verifyAsync(token, {
+      secret: process.env.JWT_SECRET,
+    });
+    const user: any = await this.usersService.findOne(+decoded.id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return { isLoggedIn: true, user };
   }
 
   /**

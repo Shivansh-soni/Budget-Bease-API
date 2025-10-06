@@ -88,8 +88,20 @@ export class UsersService {
    * @param {number} id - The ID of the user to find
    * @returns {string} Placeholder message
    */
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number) {
+    return await this.prisma.users.findUnique({
+      where: {
+        user_id: id,
+      },
+      select: {
+        user_id: true,
+        role: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        password: true,
+      },
+    });
   }
 
   /**
