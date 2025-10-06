@@ -33,22 +33,24 @@ export class AuthService {
         ...rest,
         password: hashedPassword,
       });
-      const token = await this.jwtService.signAsync(
-        {
-          id: user.user_id,
-          email: user.email,
-          name: `${user.first_name}  ${user.last_name}`,
-        },
-        {
-          expiresIn: '1h',
-          secret: process.env.JWT_SECRET,
-        },
-      );
-      this.logger.log(
-        `${user.first_name + ' ' + user.last_name} registered recently.`,
-      );
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        { id: user.user_id, email: user.email },
+        { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
+      ),
+      this.jwtService.signAsync(
+        { id: user.user_id, email: user.email },
+        { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
+      ),
+    ]);
+    // console.log(accessToken, refreshToken);
+    this.logger.log('Access token: ', accessToken);
+    this.logger.log('Refresh token: ', refreshToken);
+    this.logger.log(
+      `${user.first_name + ' ' + user.last_name} registered recently.`,
+    );
 
-      return { user, access_token: token };
+    return { user, access_token: accessToken, refresh_token: refreshToken };
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
@@ -76,20 +78,33 @@ export class AuthService {
       throw new Error('Invalid password');
     }
 
-    const token = await this.jwtService.signAsync(
-      {
-        id: user.user_id,
-        email: user.email,
-        name: user.first_name + ' ' + user.last_name,
-        role: user.role,
-      },
-      {
-        expiresIn: '1h',
-        secret: process.env.JWT_SECRET,
-      },
-    );
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          id: user.user_id,
+          email: user.email,
+          name: user.first_name + ' ' + user.last_name,
+          role: user.role,
+        },
+        {
+          expiresIn: '1h',
+          secret: process.env.JWT_SECRET,
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          id: user.user_id,
+          email: user.email,
+          name: user.first_name + ' ' + user.last_name,
+          role: user.role,
+        },
+        {
+          secret: process.env.JWT_REFRESH_SECRET,
+        },
+      ),
+    ]);
     this.logger.log(`${user.first_name + ' ' + user.last_name} logged in.`);
-    return { access_token: token };
+    return { access_token: accessToken, refresh_token: refreshToken };
   }
 
   /**
