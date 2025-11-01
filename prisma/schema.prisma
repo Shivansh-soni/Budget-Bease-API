@@ -31,17 +31,18 @@ enum transaction_type {
 // ------------------------------------------------------------
 
 model Users {
-  user_id    Int      @id @default(autoincrement())
-  email      String   @unique
-  first_name String
-  last_name  String
-  username   String   @unique
-  DOB        DateTime
-  password   String
-  role       UserRole @default(USER)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  is_active  Boolean  @default(true)
+  user_id        Int      @id @default(autoincrement())
+  email          String   @unique
+  first_name     String
+  last_name      String
+  username       String   @unique
+  DOB            DateTime
+  password       String
+  profile_picture String?  @db.Text
+  role           UserRole @default(USER)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  is_active      Boolean  @default(true)
 
   // Relations
   categories            categories[]

@@ -1,8 +1,29 @@
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
   app:
     build: .
     ports:
-      - '5000:5001'
+      - '5001:5001'
     environment:
-      - .env
+      # - .env
+        - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres?schema=public
+        - JWT_SECRET="secret123"
+        - JWT_REFRESH_SECRET="refreshsecret123"
     restart: always
+    depends_on:
+      - db
+    # command: >
+    #   sh -c "npx wait-for-it db:5432 -- npx prisma migrate dev && npm run start"
+volumes:
+  postgres_data:

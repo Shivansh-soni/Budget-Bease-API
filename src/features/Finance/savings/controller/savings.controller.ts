@@ -13,7 +13,7 @@ import {
 import { SavingsService } from '../service/savings.service';
 import { CreateSavingDto } from '../dto/create-saving.dto';
 import { UpdateSavingDto } from '../dto/update-saving.dto';
-import { AuthGuard } from '@/modules/gaurds/AuthGaurd';
+import { AuthGuard } from '../../../../modules/gaurds/AuthGaurd';
 
 @UseGuards(AuthGuard)
 @Controller('savings')

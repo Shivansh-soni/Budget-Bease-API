@@ -13,7 +13,7 @@ import {
 import { GroupsService } from '../service/groups.service';
 import { CreateGroupDto, AddMembersDto } from '../dto/create-group.dto';
 import { UpdateGroupDto } from '../dto/update-group.dto';
-import { AuthGuard } from '@/modules/gaurds/AuthGaurd';
+import { AuthGuard } from '../../../../modules/gaurds/AuthGaurd';
 
 @UseGuards(AuthGuard)
 @Controller('groups')

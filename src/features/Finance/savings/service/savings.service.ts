@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { CreateSavingDto } from '../dto/create-saving.dto';
 import { UpdateSavingDto } from '../dto/update-saving.dto';
-import { PrismaService } from '@/prisma.service';
+import { PrismaService } from '../../../../prisma.service';
 
 @Injectable()
 export class SavingsService {

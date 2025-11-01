@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { CreateGroupDto, AddMembersDto } from '../dto/create-group.dto';
 import { UpdateGroupDto } from '../dto/update-group.dto';
-import { PrismaService } from '@/prisma.service';
+import { PrismaService } from '../../../../prisma.service';
 
 /**
  * Service responsible for handling group-related operations

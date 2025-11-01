@@ -13,9 +13,8 @@ import {
 import { ExpenseService } from '../service/expense.service';
 import { CreateExpenseWithSplitsDto } from '../dto/create-expense.dto';
 import { UpdateExpenseDto } from '../dto/update-expense.dto';
-import { AuthGuard } from '@/modules/gaurds/AuthGaurd';
-
-UseGuards(AuthGuard);
+import { JwtAuthGuard } from '../../../../auth/guards/jwt-auth.guard';
+UseGuards(JwtAuthGuard);
 @Controller('group/:groupId/expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
