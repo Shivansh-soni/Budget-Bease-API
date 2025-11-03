@@ -63,7 +63,7 @@ describe('AuthController', () => {
       const expectedResult = { id: 1, ...createAuthDto, password: undefined };
       mockAuthService.create.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(createAuthDto);
+      const result = await controller.register(createAuthDto);
 
       expect(authService.create).toHaveBeenCalledWith(createAuthDto);
       expect(result).toEqual(expectedResult);
@@ -73,57 +73,67 @@ describe('AuthController', () => {
       const error = new BadRequestException('Registration failed');
       mockAuthService.create.mockRejectedValue(error);
 
-      await expect(controller.create(createAuthDto)).rejects.toThrow(error);
+      await expect(controller.register(createAuthDto)).rejects.toThrow(error);
     });
   });
 
   describe('login', () => {
-    const loginDto: LoginDto = {
-      email: 'test@example.com',
-      username: '',
-      password: 'password123',
+    const mockRequest = {
+      user: {
+        id: 1,
+        email: 'test@example.com',
+        username: 'testuser',
+      }
     };
 
     it('should call authService.login with the correct parameters', async () => {
       const expectedResult = { access_token: 'test-token' };
       mockAuthService.login.mockResolvedValue(expectedResult);
 
-      const result = await controller.login(loginDto);
+      const result = await controller.login(mockRequest);
 
-      expect(authService.login).toHaveBeenCalledWith(loginDto);
+      expect(authService.login).toHaveBeenCalledWith(mockRequest.user);
       expect(result).toEqual(expectedResult);
     });
 
     it('should throw an error if login fails', async () => {
       const error = new UnauthorizedException('Invalid credentials');
       mockAuthService.login.mockRejectedValue(error);
+      const mockRequest = {
+        user: {
+          id: 1,
+          email: 'test@example.com',
+          username: 'testuser',
+        }
+      };
 
-      await expect(controller.login(loginDto)).rejects.toThrow(error);
+      await expect(controller.login(mockRequest)).rejects.toThrow(error);
     });
   });
 
-  describe('findOne', () => {
-    const userId = '1';
+  describe('getProfile', () => {
+    const mockRequest = {
+      user: {
+        id: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+      }
+    };
     const userData = {
       id: 1,
       username: 'testuser',
       email: 'test@example.com',
     };
 
-    it('should call authService.findOne with the correct id', async () => {
-      mockAuthService.findOne.mockResolvedValue(userData);
+    it('should return the user profile from the request', async () => {
+      // getProfile method just returns req.user, so no need to mock authService.findOne
+      const result = controller.getProfile(mockRequest);
 
-      const result = await controller.findOne(userId);
-
-      expect(authService.findOne).toHaveBeenCalledWith(1);
-      expect(result).toEqual(userData);
+      expect(result).toEqual(mockRequest.user);
     });
 
-    it('should throw an error if user is not found', async () => {
-      const error = new BadRequestException('User not found');
-      mockAuthService.findOne.mockRejectedValue(error);
-
-      await expect(controller.findOne(userId)).rejects.toThrow(error);
-    });
+    // Note: Since getProfile just returns req.user directly (without calling authService.findOne), 
+    // there's no scenario where it would call authService.findOne to throw an error.
+    // The original test was incorrect for this method.
   });
 });

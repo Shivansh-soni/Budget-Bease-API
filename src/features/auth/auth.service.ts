@@ -3,13 +3,23 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../../prisma.service';
-import { CreateAuthDto, UpdateAuthDto } from './dto/create-auth.dto';
+import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login.dto';
+import { async } from 'rxjs';
+
+interface GoogleUser {
+  email: string;
+  firstName: string;
+  lastName: string;
+  picture?: string;
+  accessToken: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -33,24 +43,38 @@ export class AuthService {
         ...rest,
         password: hashedPassword,
       });
-      const [accessToken, refreshToken] = await Promise.all([
-        this.jwtService.signAsync(
-          { id: user.user_id, email: user.email },
-          { secret: process.env.JWT_ACCESS_SECRET, expiresIn: '15m' },
-        ),
-        this.jwtService.signAsync(
-          { id: user.user_id, email: user.email },
-          { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
-        ),
-      ]);
-      // console.log(accessToken, refreshToken);
-      this.logger.log('Access token: ', accessToken);
-      this.logger.log('Refresh token: ', refreshToken);
-      this.logger.log(
-        `${user.first_name + ' ' + user.last_name} registered recently.`,
-      );
 
-      return { user, access_token: accessToken, refresh_token: refreshToken };
+      const payload = {
+        email: user.email,
+        sub: user.user_id,
+        role: user.role,
+        name: `${user.first_name} ${user.last_name}`,
+      };
+
+      const [accessToken, refreshToken] = await Promise.all([
+        this.jwtService.signAsync(payload, {
+          secret: process.env.JWT_ACCESS_SECRET,
+          expiresIn: '15m',
+        }),
+        this.jwtService.signAsync(payload, {
+          secret: process.env.JWT_REFRESH_SECRET,
+          expiresIn: '7d',
+        }),
+      ]);
+
+      this.logger.log('User registered successfully');
+      this.logger.log(`New user: ${user.first_name} ${user.last_name}`);
+
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        user: {
+          id: user.user_id,
+          email: user.email,
+          name: `${user.first_name} ${user.last_name}`,
+          role: user.role,
+        },
+      };
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
@@ -64,47 +88,62 @@ export class AuthService {
    * @throws {Error} If credentials are invalid or user is not found
    * @throws {NotFoundException} If the user does not exist
    */
-  async login(loginDto: LoginDto) {
-    const { email, username, password } = loginDto;
-    if (!email && !username) {
-      throw new Error('Email or username is required');
+  /**
+   * Validates user credentials
+   * @param {string} email - User's email
+   * @param {string} password - User's password
+   * @param {string} username - User's username
+   * @returns {Promise<any>} User object without password if valid, null otherwise
+   */
+  async validateUser(
+    email: string,
+    password: string,
+    username?: string,
+  ): Promise<any> {
+    const user = await this.usersService.getUserByEmail(email, username ?? '');
+    if (user && (await bcrypt.compare(password, user.password))) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...result } = user;
+      return result;
     }
-    const user = await this.usersService.getUserByEmail(email, username);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new Error('Invalid password');
-    }
+    return null;
+  }
+
+  /**
+   * Handles user login
+   * @param {any} user - The authenticated user
+   * @returns {Promise<{ access_token: string; refresh_token: string }>} JWT tokens
+   */
+  async login(user: any) {
+    const payload = {
+      email: user.email,
+      sub: user.user_id,
+      role: user.role,
+      name: `${user.first_name} ${user.last_name}`,
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          id: user.user_id,
-          email: user.email,
-          name: user.first_name + ' ' + user.last_name,
-          role: user.role,
-        },
-        {
-          expiresIn: '1h',
-          secret: process.env.JWT_SECRET,
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          id: user.user_id,
-          email: user.email,
-          name: user.first_name + ' ' + user.last_name,
-          role: user.role,
-        },
-        {
-          secret: process.env.JWT_REFRESH_SECRET,
-        },
-      ),
+      this.jwtService.signAsync(payload, {
+        expiresIn: '1h',
+        secret: process.env.JWT_ACCESS_SECRET,
+      }),
+      this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+        secret: process.env.JWT_REFRESH_SECRET,
+      }),
     ]);
-    this.logger.log(`${user.first_name + ' ' + user.last_name} logged in.`);
-    return { access_token: accessToken, refresh_token: refreshToken };
+
+    this.logger.log(`${user.first_name} ${user.last_name} logged in.`);
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: {
+        id: user.user_id,
+        email: user.email,
+        name: `${user.first_name} ${user.last_name}`,
+        role: user.role,
+      },
+    };
   }
 
   /**
@@ -164,7 +203,8 @@ export class AuthService {
    * @param {UpdateAuthDto} updateAuthDto - The data to update
    * @returns {string} Placeholder message
    */
-  update(id: number, updateAuthDto: UpdateAuthDto) {
+  async update(id: number, updateAuthDto: any) {
+    // Implementation for updating user
     return `This action updates a #${id} auth`;
   }
 
@@ -175,5 +215,71 @@ export class AuthService {
    */
   remove(id: number) {
     return `This action removes a #${id} auth`;
+  }
+
+  /**
+   * Validates or creates a user from OAuth login
+   * @param {GoogleUser} user - The user data from Google OAuth
+   * @returns {Promise<any>} The authenticated user with tokens
+   */
+  async validateOAuthLogin(user: GoogleUser) {
+    try {
+      // Check if user exists
+      let dbUser = await this.prisma.users.findUnique({
+        where: { email: user.email },
+      });
+
+      // If user doesn't exist, create a new one
+      if (!dbUser) {
+        // Create a username from email (remove @ and everything after it)
+        const username = user.email.split('@')[0].toLowerCase();
+        
+        dbUser = await this.prisma.users.create({
+          data: {
+            email: user.email,
+            first_name: user.firstName,
+            last_name: user.lastName,
+            username: username, // Required field in schema
+            password: await bcrypt.hash(Math.random().toString(36).slice(-12), 10), // Random password
+            profile_picture: user.picture || null,
+            DOB: new Date(), // Required field in schema, setting to current date as default
+          },
+        });
+      }
+
+      // Generate tokens
+      const payload = {
+        email: dbUser.email,
+        sub: dbUser.user_id,
+        role: dbUser.role,
+        name: `${dbUser.first_name} ${dbUser.last_name}`,
+      };
+
+      const [accessToken, refreshToken] = await Promise.all([
+        this.jwtService.signAsync(payload, {
+          expiresIn: '1h',
+          secret: process.env.JWT_ACCESS_SECRET,
+        }),
+        this.jwtService.signAsync(payload, {
+          expiresIn: '7d',
+          secret: process.env.JWT_REFRESH_SECRET,
+        }),
+      ]);
+
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        user: {
+          id: dbUser.user_id,
+          email: dbUser.email,
+          name: `${dbUser.first_name} ${dbUser.last_name}`,
+          role: dbUser.role,
+          picture: dbUser.profile_picture,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Error in validateOAuthLogin', error);
+      throw new BadRequestException('Error validating OAuth login');
+    }
   }
 }

@@ -13,6 +13,7 @@ COPY . .
 
 RUN npm run build
 
+
 # ----------------------
 # 2. Production deps only
 # ----------------------
@@ -38,6 +39,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=deps /app/node_modules ./node_modules
 
 COPY --from=builder /app/.env ./.env
+
+# RUN npx prisma migrate dev --name="budget-beast"
 
 RUN npx prisma generate
 
