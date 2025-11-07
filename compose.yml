@@ -6,24 +6,24 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
-    ports:
-      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: always
+
   app:
     build: .
     ports:
       - '5001:5001'
     environment:
-      # - .env
-        - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres?schema=public
-        - JWT_SECRET="secret123"
-        - JWT_REFRESH_SECRET="refreshsecret123"
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres?schema=public
+      - JWT_SECRET="secret123"
+      - JWT_REFRESH_SECRET="refreshsecret123"
     restart: always
     depends_on:
-      - db
-    # command: >
-    #   sh -c "npx wait-for-it db:5432 -- npx prisma migrate dev && npm run start"
-volumes:
-  postgres_data:
+      db:
+        condition: service_healthy
