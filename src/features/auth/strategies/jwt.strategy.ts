@@ -1,15 +1,14 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-   constructor() {
-    const secret = process.env.JWT_SECRET;
+  constructor() {
+    const secret = process.env.JWT_ACCESS_SECRET;
     if (!secret) {
-      throw new Error('JWT_SECRET is not defined in the configuration');
+      throw new Error('JWT_ACCESS_SECRET is not defined in the configuration');
     }
-
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -20,13 +19,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   /**
    * Validates the JWT payload
    * @param {any} payload - The JWT payload
-   * @returns {Promise<{ userId: string; email: string; role: string }>} User information from the token
+   * @returns {Promise<any>} User information from the token
    */
-  async validate(payload: any): Promise<{ userId: string; email: string; role: string }> {
+
+  async validate(payload: any): Promise<any> {
+    if (!payload.sub || !payload.email) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
     return {
-      userId: payload.id || payload.sub,
+      id: payload.sub, // This matches the 'sub' field in your JWT
       email: payload.email,
-      role: payload.role
+      role: payload.role,
+      name: payload.name,
     };
   }
 }

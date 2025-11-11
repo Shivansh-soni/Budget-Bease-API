@@ -9,7 +9,15 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
+import { CreateAuthDto, RegisterResponseDto } from './dto/create-auth.dto';
+import {
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiUnprocessableEntityResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -26,6 +34,8 @@ export class AuthController {
    */
   @Get('google')
   @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Initiate Google OAuth flow' })
+  @ApiOkResponse({ description: 'Redirect to Google OAuth consent screen' })
   async googleAuth() {
     // The AuthGuard will redirect to Google's OAuth consent screen
   }
@@ -36,20 +46,34 @@ export class AuthController {
    */
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Google OAuth callback URL' })
+  @ApiOkResponse({
+    description: "Handles the response from Google's OAuth server",
+  })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     try {
       // Get tokens and user info from the request
       const { access_token, refresh_token, user } = req.user;
-      
+
       // Set cookies with httpOnly flag for security
-      res.cookie('access_token', access_token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-      res.cookie('refresh_token', refresh_token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
-      
+      res.cookie('access_token', access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+      res.cookie('refresh_token', refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+
       // Redirect to the success page with user data
-      return res.redirect(`/auth/google/success?user=${encodeURIComponent(JSON.stringify(user))}`);
+      return res.redirect(
+        `/auth/google/success?user=${encodeURIComponent(JSON.stringify(user))}`,
+      );
     } catch (error) {
       // Redirect to the failure page with error message
-      return res.redirect(`/auth/google/failure?error=${encodeURIComponent(error.message)}`);
+      return res.redirect(
+        `/auth/google/failure?error=${encodeURIComponent(error.message)}`,
+      );
     }
   }
 
@@ -58,15 +82,19 @@ export class AuthController {
    * Returns user data and tokens as JSON
    */
   @Get('google/success')
+  @ApiOperation({ summary: 'Success handler for Google OAuth' })
+  @ApiOkResponse({ description: 'Returns user data and tokens as JSON' })
   async googleAuthSuccess(@Request() req) {
     // This endpoint is called after successful Google OAuth
     // The actual user data is passed as a query parameter from the redirect
-    const user = req.query.user ? JSON.parse(decodeURIComponent(req.query.user as string)) : null;
-    
+    const user = req.query.user
+      ? JSON.parse(decodeURIComponent(req.query.user as string))
+      : null;
+
     if (!user) {
       throw new Error('No user data available');
     }
-    
+
     return {
       success: true,
       user,
@@ -80,8 +108,12 @@ export class AuthController {
    * Returns error information
    */
   @Get('google/failure')
+  @ApiOperation({ summary: 'Failure handler for Google OAuth' })
+  @ApiOkResponse({ description: 'Returns error information' })
   async googleAuthFailure(@Request() req) {
-    const error = req.query.error ? decodeURIComponent(req.query.error as string) : 'Authentication failed';
+    const error = req.query.error
+      ? decodeURIComponent(req.query.error as string)
+      : 'Authentication failed';
     return {
       success: false,
       error,
@@ -103,6 +135,14 @@ export class AuthController {
    * @returns The created user and authentication tokens
    */
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiCreatedResponse({
+    description: 'Returns the created user and authentication tokens',
+    type: RegisterResponseDto,
+  })
+  @ApiBody({ type: CreateAuthDto })
+  @ApiBadRequestResponse({ description: 'Invalid input data' })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid input data' })
   async register(@Body(new ValidationPipe()) createAuthDto: CreateAuthDto) {
     try {
       return await this.authService.create(createAuthDto);
@@ -118,7 +158,13 @@ export class AuthController {
    */
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Request() req) {
+  @ApiOperation({ summary: 'Log in a user' })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({
+    description: 'Returns authentication tokens and user data',
+    type: RegisterResponseDto,
+  })
+  async login(@Request() req: any) {
     return this.authService.login(req.user);
   }
 
@@ -129,6 +175,8 @@ export class AuthController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('profile')
+  @ApiOperation({ summary: "Get the current user's profile" })
+  @ApiOkResponse({ description: "Returns the current user's profile" })
   getProfile(@Request() req) {
     return req.user;
   }
@@ -139,6 +187,8 @@ export class AuthController {
    * @returns A new access token
    */
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh an access token' })
+  @ApiOkResponse({ description: 'Returns a new access token' })
   async refresh(@Body() body: { refresh_token: string }) {
     return this.authService.refresh(body.refresh_token);
   }
@@ -150,6 +200,8 @@ export class AuthController {
    */
   @UseGuards(JwtAuthGuard)
   @Get('verify')
+  @ApiOperation({ summary: 'Verify a JWT token' })
+  @ApiOkResponse({ description: 'Returns the decoded token payload' })
   verify(@Request() req) {
     // If we get here, the token is valid (thanks to JwtAuthGuard)
     return { valid: true, user: req.user };

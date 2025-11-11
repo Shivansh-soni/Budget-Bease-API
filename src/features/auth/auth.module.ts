@@ -15,12 +15,13 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 
 @Module({
   imports: [
+    ConfigModule,
     UsersModule,
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('JWT_ACCESS_SECRET'),
         signOptions: { expiresIn: '15m' },
       }),
       inject: [ConfigService],
@@ -36,11 +37,12 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
     GoogleStrategy,
     JwtAuthGuard,
     LocalAuthGuard,
+    ConfigService,
     {
       provide: 'AUTH_SERVICE',
       useClass: AuthService,
     },
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {}
