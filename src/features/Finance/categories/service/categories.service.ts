@@ -63,7 +63,7 @@ export class CategoriesService {
    */
   async findByUser(id: string) {
     if (!id) {
-      throw new ForbiddenException('Invalid User');
+      throw new ForbiddenException('Invalid User ID');
     }
     try {
       const res = await this.prismaService.categories.findMany({

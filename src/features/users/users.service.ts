@@ -22,11 +22,10 @@ export class UsersService {
       );
     }
 
-    return await this.prisma.users.findUnique({
-      where: {
-        email,
-        username,
-      },
+    const payload = email ? { email } : { username };
+
+    const user = await this.prisma.users.findUnique({
+      where: payload,
       select: {
         user_id: true,
         role: true,
@@ -36,6 +35,7 @@ export class UsersService {
         password: true,
       },
     });
+    return user;
   }
 
   /**
