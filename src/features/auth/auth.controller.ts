@@ -52,10 +52,15 @@ export class AuthController {
   })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     try {
-      // Get tokens and user info from the request
       const { access_token, refresh_token, user } = req.user;
 
-      // Set cookies with httpOnly flag for security
+      // Get redirect URI from query (sent from the mobile app)
+      const redirectUri = req.query.redirect_uri || 'exp://127.0.0.1:8081'; // fallback for dev
+
+      // Construct redirect URL to the app with tokens
+      const redirectUrl = `${redirectUri}?access_token=${access_token}&refresh_token=${refresh_token}`;
+
+      // Optionally set cookies (for web usage)
       res.cookie('access_token', access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -65,14 +70,12 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
       });
 
-      // Redirect to the success page with user data
-      return res.redirect(
-        `/auth/google/success?user=${encodeURIComponent(JSON.stringify(user))}`,
-      );
+      // ✅ Redirect user back to Expo app (not web)
+      return res.redirect(redirectUrl);
     } catch (error) {
-      // Redirect to the failure page with error message
+      const redirectUri = req.query.redirect_uri || 'exp://127.0.0.1:8081';
       return res.redirect(
-        `/auth/google/failure?error=${encodeURIComponent(error.message)}`,
+        `${redirectUri}?error=${encodeURIComponent(error.message)}`,
       );
     }
   }
