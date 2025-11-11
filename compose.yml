@@ -8,6 +8,12 @@ services:
       - POSTGRES_DB=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
+    command: >
+      bash -c "
+      chmod 600 /var/lib/postgresql/data/pg_hba.conf &&
+      exec docker-entrypoint.sh postgres
+      "
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
