@@ -2,12 +2,22 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { ConsoleLogger, ValidationPipe } from '@nestjs/common';
 import { InternalDisabledLogger } from './utils/newLogger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 const cookieParser = require('cookie-parser');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new InternalDisabledLogger(),
   });
+
+  const config = new DocumentBuilder()
+    .setTitle('Budget Beast API')
+    .setDescription('Budget Beast API description')
+    .setVersion('1.0')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
 
   // Enable CORS with appropriate options
   app.enableCors({

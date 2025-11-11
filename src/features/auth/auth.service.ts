@@ -95,6 +95,7 @@ export class AuthService {
    * @param {string} username - User's username
    * @returns {Promise<any>} User object without password if valid, null otherwise
    */
+
   async validateUser(
     email: string,
     password: string,
@@ -121,7 +122,6 @@ export class AuthService {
       role: user.role,
       name: `${user.first_name} ${user.last_name}`,
     };
-
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         expiresIn: '1h',
@@ -233,14 +233,17 @@ export class AuthService {
       if (!dbUser) {
         // Create a username from email (remove @ and everything after it)
         const username = user.email.split('@')[0].toLowerCase();
-        
+
         dbUser = await this.prisma.users.create({
           data: {
             email: user.email,
             first_name: user.firstName,
             last_name: user.lastName,
             username: username, // Required field in schema
-            password: await bcrypt.hash(Math.random().toString(36).slice(-12), 10), // Random password
+            password: await bcrypt.hash(
+              Math.random().toString(36).slice(-12),
+              10,
+            ), // Random password
             profile_picture: user.picture || null,
             DOB: new Date(), // Required field in schema, setting to current date as default
           },
