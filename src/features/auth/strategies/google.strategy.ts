@@ -46,7 +46,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     try {
       // Type assertion to our extended interface
       const googleProfile = profile as GoogleProfile;
-      
+
       const email = googleProfile.emails?.[0]?.value;
       if (!email) {
         throw new Error('Email is required');

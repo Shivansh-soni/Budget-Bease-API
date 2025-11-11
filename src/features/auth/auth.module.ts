@@ -10,6 +10,8 @@ import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
+import { FacebookStrategy } from './strategies/facebook.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 
@@ -35,6 +37,8 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
     LocalStrategy, 
     JwtStrategy,
     GoogleStrategy,
+    GithubStrategy,
+    FacebookStrategy,
     JwtAuthGuard,
     LocalAuthGuard,
     ConfigService,
