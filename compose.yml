@@ -22,14 +22,12 @@ services:
     build: .
     ports:
       - '5001:5001'
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres?schema=public
-      - JWT_SECRET="secret123"
-      - JWT_REFRESH_SECRET="refreshsecret123"
+    env-file:
+      - .env
     restart: always
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  postgres_data
