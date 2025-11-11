@@ -22,7 +22,7 @@ services:
     build: .
     ports:
       - '5001:5001'
-    env-file:
+    env_file:
       - .env
     restart: always
     depends_on:
