@@ -13,9 +13,9 @@ import {
 import { GroupsService } from '../service/groups.service';
 import { CreateGroupDto, AddMembersDto } from '../dto/create-group.dto';
 import { UpdateGroupDto } from '../dto/update-group.dto';
-import { AuthGuard } from '../../../../modules/gaurds/AuthGaurd';
+import { JwtAuthGuard } from '@/features/auth/guards/jwt-auth.guard';
 
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('groups')
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}

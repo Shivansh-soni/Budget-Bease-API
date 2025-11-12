@@ -15,8 +15,8 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateAuthDto } from '../auth/dto/create-auth.dto';
-import { AuthGuard } from '../../modules/gaurds/AuthGaurd';
 import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -33,7 +33,7 @@ export class UsersController {
   }
 
   @Get('/profile')
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   profile(@Request() req: any) {
     return this.usersService.showProfile(req.user.id);
   }
