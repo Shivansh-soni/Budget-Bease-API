@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsString,
   IsDateString,
+  IsNumberString,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { transaction_type } from '../../../../../generated/prisma';
@@ -17,7 +18,7 @@ export class CreateTransactionDto {
   })
   category_id?: number;
 
-  @IsNumber() // Consider using a custom decorator for Decimal validation
+  @IsNumberString() // Consider using a custom decorator for Decimal validation
   @ApiProperty({
     description: 'Amount',
     example: 100,
