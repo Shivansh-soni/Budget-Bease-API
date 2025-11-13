@@ -33,18 +33,33 @@ export class CategoriesService {
    * @throws {ConflictException} If a category with the same name and type already exists
    * @throws {Error} For any other unexpected errors
    */
+  /**
+   * Creates a new category with the provided data
+   * @param {number} user_id - The ID of the user creating the category
+   * @param {CreateCategoryDto} createCategoryDto - The category data to create
+   * @returns {Promise<Object>} The created category with all fields including color and icon
+   * @throws {ConflictException} If a category with the same name and type already exists
+   * @throws {Error} For any other unexpected errors
+   */
   async create(user_id: number, createCategoryDto: CreateCategoryDto) {
     try {
+      const { color, icon, ...rest } = createCategoryDto;
+      
       const res = await this.prismaService.categories.create({
-        data: { ...createCategoryDto, user_id },
+        data: { 
+          ...rest,
+          color: color || '#3B82F6', // Default color if not provided
+          icon: icon || 'tag',       // Default icon if not provided
+          user_id 
+        },
       });
       return res;
     } catch (error) {
-      console.log('msg', error.message);
+      console.error('Error creating category:', error.message);
       if (error.message.includes('Unique')) {
-        throw new ConflictException(error.message);
+        throw new ConflictException('A category with this name and type already exists');
       } else {
-        throw new Error();
+        throw new InternalServerErrorException('Failed to create category');
       }
     }
   }
@@ -61,20 +76,29 @@ export class CategoriesService {
    * @returns {Promise<Array<Object>>} List of categories belonging to the user
    * @throws {ForbiddenException} If the user ID is invalid
    */
+  /**
+   * Retrieves all categories for a specific user
+   * @param {string} id - The ID of the user
+   * @returns {Promise<Array<Object>>} List of categories belonging to the user with all fields
+   * @throws {ForbiddenException} If the user ID is invalid
+   * @throws {InternalServerErrorException} If there's an error fetching categories
+   */
   async findByUser(id: string) {
     if (!id) {
       throw new ForbiddenException('Invalid User ID');
     }
     try {
-      const res = await this.prismaService.categories.findMany({
+      return await this.prismaService.categories.findMany({
         where: {
           user_id: Number(id),
         },
+        orderBy: {
+          created_at: 'desc', // Most recent first
+        },
       });
-
-      return res;
     } catch (error) {
-      console.log(error.message);
+      console.error('Error fetching categories:', error.message);
+      throw new InternalServerErrorException('Failed to fetch categories');
     }
   }
 
@@ -119,6 +143,16 @@ export class CategoriesService {
    * @returns {Promise<Object>} The updated category or a message if no changes were made
    * @throws {NotFoundException} If the category is not found
    */
+  /**
+   * Updates an existing category with the provided data
+   * @param {number} user_id - The ID of the user updating the category
+   * @param {number} id - The ID of the category to update
+   * @param {UpdateCategoryDto} updateCategoryDto - The data to update the category with
+   * @returns {Promise<Object>} The updated category with all fields including color and icon
+   * @throws {NotFoundException} If the category is not found
+   * @throws {ConflictException} If a category with the same name and type already exists
+   * @throws {InternalServerErrorException} For any other unexpected errors
+   */
   async update(
     user_id: number,
     id: number,
@@ -128,27 +162,59 @@ export class CategoriesService {
       throw new NotFoundException('Category not found');
     }
 
-    const oldValue: any = await this.findOne(id);
+    // Check if the category exists and belongs to the user
+    const category = await this.prismaService.categories.findFirst({
+      where: {
+        category_id: id,
+        user_id: user_id,
+      },
+    });
 
-    if (
-      oldValue['name'] === updateCategoryDto['name'] &&
-      oldValue['type'] === updateCategoryDto['type']
-    ) {
-      return {
-        message: 'No value changed',
-      };
+    if (!category) {
+      throw new NotFoundException('Category not found or access denied');
     }
-    try {
-      const res = await this.prismaService.categories.update({
+
+    // Check if the update would result in a duplicate category
+    if (updateCategoryDto.name || updateCategoryDto.type) {
+      const existingCategory = await this.prismaService.categories.findFirst({
         where: {
           user_id,
+          name: updateCategoryDto.name || category.name,
+          type: updateCategoryDto.type || category.type,
+          NOT: {
+            category_id: id,
+          },
+        },
+      });
+
+      if (existingCategory) {
+        throw new ConflictException('A category with this name and type already exists');
+      }
+    }
+
+    try {
+      const { color, icon, ...rest } = updateCategoryDto;
+      
+      const updateData = {
+        ...rest,
+        ...(color !== undefined && { color }), // Only include color if it's provided
+        ...(icon !== undefined && { icon }),   // Only include icon if it's provided
+      };
+
+      const res = await this.prismaService.categories.update({
+        where: {
           category_id: id,
         },
-        data: updateCategoryDto,
+        data: updateData,
       });
+      
       return res;
     } catch (error) {
-      console.log('error', error.message);
+      console.error('Error updating category:', error.message);
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Category not found');
+      }
+      throw new InternalServerErrorException('Failed to update category');
     }
   }
 

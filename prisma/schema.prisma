@@ -70,6 +70,8 @@ model categories {
   total_budget     Int
   amount_spent     Int                     @default(0)
   amount_remaining Int?
+  color            String?                 @db.VarChar(7)  // Storing hex color code (e.g., #FF5733)
+  icon             String?                 @db.VarChar(50) // Icon identifier (e.g., 'shopping-cart')
   // Relations
   user             Users                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
   transactions     personal_transactions[]

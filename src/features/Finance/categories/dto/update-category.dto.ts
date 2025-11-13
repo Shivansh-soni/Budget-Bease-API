@@ -1,42 +1,76 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateCategoryDto } from './create-category.dto';
+import { IsHexColor, IsOptional, IsString } from 'class-validator';
 import { category_type } from '../../../../../generated/prisma';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateCategoryDto extends PartialType(CreateCategoryDto) {
+  @IsString()
+  @IsOptional()
   @ApiProperty({
     description: 'Category name',
     example: 'Groceries',
+    required: false,
   })
-  name: string;
+  name?: string;
 
+  @IsOptional()
   @ApiProperty({
     description: 'Category type',
     example: 'expense',
+    required: false,
   })
-  type: category_type;
+  type?: category_type;
 
+  @IsString()
+  @IsOptional()
   @ApiProperty({
     description: 'Category description',
-    example: 'Groceries',
+    example: 'Monthly grocery shopping',
+    required: false,
   })
-  description: string;
+  description?: string;
 
+  @IsOptional()
   @ApiProperty({
     description: 'Total budget',
-    example: 100,
+    example: 1000,
+    required: false,
   })
-  total_budget: number;
+  total_budget?: number;
 
+  @IsOptional()
   @ApiProperty({
     description: 'Amount spent',
-    example: 50,
+    example: 500,
+    required: false,
   })
-  amount_spent: number;
+  amount_spent?: number;
 
+  @IsOptional()
   @ApiProperty({
     description: 'Amount remaining',
-    example: 50,
+    example: 500,
+    required: false,
   })
-  amount_remaining: number;
+  amount_remaining?: number;
+
+  @IsString()
+  @IsOptional()
+  @IsHexColor()
+  @ApiProperty({
+    description: 'Category color in hex format',
+    example: '#FF5733',
+    required: false,
+  })
+  color?: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    description: 'Icon name or identifier',
+    example: 'shopping-cart',
+    required: false,
+  })
+  icon?: string;
 }
