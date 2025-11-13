@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsHexColor, IsNumber, IsOptional, IsString } from 'class-validator';
 import { category_type } from '../../../../../generated/prisma';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -20,7 +20,7 @@ export class CreateCategoryDto {
   @IsString()
   @ApiProperty({
     description: 'Category description',
-    example: 'Groceries',
+    example: 'Monthly grocery shopping',
   })
   description: string;
 
@@ -28,7 +28,7 @@ export class CreateCategoryDto {
   @IsOptional()
   @ApiProperty({
     description: 'Total budget',
-    example: 100,
+    example: 1000,
   })
   total_budget: number;
 
@@ -36,7 +36,7 @@ export class CreateCategoryDto {
   @IsOptional()
   @ApiProperty({
     description: 'Amount spent',
-    example: 50,
+    example: 500,
   })
   amount_spent: number;
 
@@ -44,7 +44,24 @@ export class CreateCategoryDto {
   @IsOptional()
   @ApiProperty({
     description: 'Amount remaining',
-    example: 50,
+    example: 500,
   })
   amount_remaining: number;
+
+  @IsString()
+  @IsOptional()
+  @IsHexColor()
+  @ApiProperty({
+    description: 'Category color in hex format',
+    example: '#FF5733',
+  })
+  color: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty({
+    description: 'Icon name or identifier',
+    example: 'shopping-cart',
+  })
+  icon: string;
 }
