@@ -25,6 +25,9 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 
 @Controller('auth')
+/**
+ * Handles authentication-related endpoints including OAuth flows
+ */
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -51,11 +54,71 @@ export class AuthController {
     description: "Handles the response from Google's OAuth server",
   })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
-    try {
-      // Get tokens and user info from the request
-      const { access_token, refresh_token, user } = req.user;
+    return this.handleOAuthRedirect(req, res);
+  }
 
-      // Set cookies with httpOnly flag for security
+  /**
+   * Initiate GitHub OAuth flow
+   */
+  @Get('github')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'Initiate GitHub OAuth flow' })
+  @ApiOkResponse({ description: 'Redirect to GitHub OAuth consent screen' })
+  async githubAuth() {
+    // The AuthGuard will redirect to GitHub's OAuth consent screen
+  }
+
+  /**
+   * GitHub OAuth callback URL
+   */
+  @Get('github/redirect')
+  @UseGuards(AuthGuard('github'))
+  @ApiOperation({ summary: 'GitHub OAuth callback URL' })
+  @ApiOkResponse({
+    description: "Handles the response from GitHub's OAuth server",
+  })
+  async githubAuthRedirect(@Request() req, @Res() res: Response) {
+    return this.handleOAuthRedirect(req, res);
+  }
+
+  /**
+   * Initiate Facebook OAuth flow
+   */
+  @Get('facebook')
+  @UseGuards(AuthGuard('facebook'))
+  @ApiOperation({ summary: 'Initiate Facebook OAuth flow' })
+  @ApiOkResponse({ description: 'Redirect to Facebook OAuth consent screen' })
+  async facebookAuth() {
+    // The AuthGuard will redirect to Facebook's OAuth consent screen
+  }
+
+  /**
+   * Facebook OAuth callback URL
+   */
+  @Get('facebook/redirect')
+  @UseGuards(AuthGuard('facebook'))
+  @ApiOperation({ summary: 'Facebook OAuth callback URL' })
+  @ApiOkResponse({
+    description: "Handles the response from Facebook's OAuth server",
+  })
+  async facebookAuthRedirect(@Request() req, @Res() res: Response) {
+    return this.handleOAuthRedirect(req, res);
+  }
+
+  /**
+   * Helper method to handle OAuth redirects
+   */
+  private async handleOAuthRedirect(req: any, res: Response) {
+    try {
+      const { access_token, refresh_token } = req.user;
+
+      // Get redirect URI from query (sent from the mobile app)
+      const redirectUri = req.query.redirect_uri || 'exp://127.0.0.1:8081'; // fallback for dev
+
+      // Construct redirect URL to the app with tokens
+      const redirectUrl = `${redirectUri}?access_token=${access_token}&refresh_token=${refresh_token}`;
+
+      // Optionally set cookies (for web usage)
       res.cookie('access_token', access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -65,14 +128,12 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
       });
 
-      // Redirect to the success page with user data
-      return res.redirect(
-        `/auth/google/success?user=${encodeURIComponent(JSON.stringify(user))}`,
-      );
+      // Redirect user back to Expo app (not web)
+      return res.redirect(redirectUrl);
     } catch (error) {
-      // Redirect to the failure page with error message
+      const redirectUri = req.query.redirect_uri || 'exp://127.0.0.1:8081';
       return res.redirect(
-        `/auth/google/failure?error=${encodeURIComponent(error.message)}`,
+        `${redirectUri}?error=${encodeURIComponent(error.message)}`,
       );
     }
   }

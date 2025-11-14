@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: postgres
+    container_name: db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -18,13 +18,10 @@ services:
     restart: always
 
   app:
+    container_name: app
     build: .
     ports:
       - '5001:5001'
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres?schema=public
-      - JWT_SECRET="secret123"
-      - JWT_REFRESH_SECRET="refreshsecret123"
     restart: always
     depends_on:
       db:
