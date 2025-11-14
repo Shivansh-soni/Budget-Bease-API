@@ -29,12 +29,12 @@ export class CategoriesService {
    */
   async create(user_id: number, createCategoryDto: CreateCategoryDto) {
     try {
-      const { color, icon, ...rest } = createCategoryDto;
+      const { icon, ...rest } = createCategoryDto;
 
       const res = await this.prismaService.categories.create({
         data: {
           ...rest,
-          color: color || '#3B82F6', // Default color if not provided
+          // color: color || '#3B82F6', // Default color if not provided
           icon: icon || 'tag', // Default icon if not provided
           user_id,
         },
@@ -71,7 +71,7 @@ export class CategoriesService {
               description: category.description,
               total_budget: 0, // Default budget of 0, can be updated later
               amount_remaining: 0,
-              color: this.getDefaultColorForCategory(category.type),
+              // color: this.getDefaultColorForCategory(category.type),
               icon: category.icon,
             },
           }),
