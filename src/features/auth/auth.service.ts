@@ -251,8 +251,8 @@ export class AuthService {
             DOB: new Date(), // Required field in schema, setting to current date as default
           },
         });
+        await this.categoriesService.seedDefaultCategories(dbUser.user_id);
       }
-      await this.categoriesService.seedDefaultCategories(dbUser.user_id);
       // Generate tokens
       const payload = {
         email: dbUser.email,
