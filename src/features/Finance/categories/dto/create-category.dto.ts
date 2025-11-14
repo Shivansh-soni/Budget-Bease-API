@@ -54,14 +54,14 @@ export class CreateCategoryDto {
   })
   amount_remaining: number;
 
-  @IsString()
-  @IsOptional()
-  @IsHexColor()
-  @ApiProperty({
-    description: 'Category color in hex format',
-    example: '#FF5733',
-  })
-  color: string;
+  // @IsString()
+  // @IsOptional()
+  // @IsHexColor()
+  // @ApiProperty({
+  //   description: 'Category color in hex format',
+  //   example: '#FF5733',
+  // })
+  // color: string;
 
   @IsString()
   @IsOptional()
