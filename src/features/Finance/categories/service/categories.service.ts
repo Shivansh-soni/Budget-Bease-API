@@ -70,14 +70,19 @@ export class CategoriesService {
               type: category.type as any, // Type assertion since we know the values match
               description: category.description,
               total_budget: 0, // Default budget of 0, can be updated later
+              amount_spent: 0, // Initialize amount_spent to 0
               amount_remaining: 0,
               // color: this.getDefaultColorForCategory(category.type),
-              icon: category.icon,
+              icon: category.icon || 'tag', // Default icon if not provided
             },
           }),
         ),
       );
     } catch (error) {
+      console.error('Error seeding default categories:', error);
+      throw new InternalServerErrorException(
+        'Failed to seed default categories',
+      );
       console.error('Error seeding default categories:', error);
       // Don't throw error to prevent signup failure due to category seeding
     }
