@@ -1,4 +1,10 @@
-import { IsEnum, IsHexColor, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsHexColor,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { category_type } from '../../../../../generated/prisma';
 import { ApiProperty } from '@nestjs/swagger';
 

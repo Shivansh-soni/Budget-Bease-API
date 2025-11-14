@@ -1,4 +1,15 @@
-import { IsDateString, IsDecimal, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsDateString,
+  IsDecimal,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateExpenseSplitDto } from './create-expense-split.dto';
 import { ApiProperty } from '@nestjs/swagger';

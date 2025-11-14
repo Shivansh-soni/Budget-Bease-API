@@ -44,9 +44,9 @@ describe('SavingsController', () => {
         },
       ],
     })
-    .overrideGuard('AuthGuard')
-    .useValue(mockAuthGuard)
-    .compile();
+      .overrideGuard('AuthGuard')
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<SavingsController>(SavingsController);
     prismaService = module.get<PrismaService>(PrismaService);

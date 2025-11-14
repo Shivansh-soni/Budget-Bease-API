@@ -11,7 +11,7 @@ import { UsersService } from '../users/users.service';
 import { PrismaService } from '../../prisma.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginDto } from './dto/login.dto';
-import { async } from 'rxjs';
+import { CategoriesService } from '../Finance/categories/service/categories.service';
 
 interface GoogleUser {
   email: string;
@@ -28,6 +28,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly categoriesService: CategoriesService,
   ) {}
   /**
    * Creates a new user account and generates an access token
@@ -43,6 +44,8 @@ export class AuthService {
         ...rest,
         password: hashedPassword,
       });
+
+      await this.categoriesService.seedDefaultCategories(user.user_id);
 
       const payload = {
         email: user.email,
@@ -249,7 +252,7 @@ export class AuthService {
           },
         });
       }
-
+      await this.categoriesService.seedDefaultCategories(dbUser.user_id);
       // Generate tokens
       const payload = {
         email: dbUser.email,

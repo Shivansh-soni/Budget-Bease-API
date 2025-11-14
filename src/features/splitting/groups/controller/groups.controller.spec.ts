@@ -44,9 +44,9 @@ describe('GroupsController', () => {
         },
       ],
     })
-    .overrideGuard('AuthGuard')
-    .useValue(mockAuthGuard)
-    .compile();
+      .overrideGuard('AuthGuard')
+      .useValue(mockAuthGuard)
+      .compile();
 
     controller = module.get<GroupsController>(GroupsController);
     prismaService = module.get<PrismaService>(PrismaService);

@@ -83,7 +83,7 @@ describe('AuthController', () => {
         id: 1,
         email: 'test@example.com',
         username: 'testuser',
-      }
+      },
     };
 
     it('should call authService.login with the correct parameters', async () => {
@@ -104,7 +104,7 @@ describe('AuthController', () => {
           id: 1,
           email: 'test@example.com',
           username: 'testuser',
-        }
+        },
       };
 
       await expect(controller.login(mockRequest)).rejects.toThrow(error);
@@ -117,7 +117,7 @@ describe('AuthController', () => {
         id: 1,
         username: 'testuser',
         email: 'test@example.com',
-      }
+      },
     };
     const userData = {
       id: 1,
@@ -132,7 +132,7 @@ describe('AuthController', () => {
       expect(result).toEqual(mockRequest.user);
     });
 
-    // Note: Since getProfile just returns req.user directly (without calling authService.findOne), 
+    // Note: Since getProfile just returns req.user directly (without calling authService.findOne),
     // there's no scenario where it would call authService.findOne to throw an error.
     // The original test was incorrect for this method.
   });

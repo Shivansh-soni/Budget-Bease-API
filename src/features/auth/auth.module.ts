@@ -12,7 +12,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-
+import { CategoriesService } from '../Finance/categories/service/categories.service';
 @Module({
   imports: [
     ConfigModule,
@@ -29,11 +29,12 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
   ],
   controllers: [AuthController],
   providers: [
-    AuthService, 
-    UsersService, 
-    PrismaService, 
-    LocalStrategy, 
+    AuthService,
+    UsersService,
+    PrismaService,
+    LocalStrategy,
     JwtStrategy,
+    CategoriesService,
     GoogleStrategy,
     JwtAuthGuard,
     LocalAuthGuard,
