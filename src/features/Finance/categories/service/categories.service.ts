@@ -9,6 +9,7 @@ import { CreateCategoryDto } from '../dto/create-category.dto';
 import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { PrismaService } from 'src/prisma.service';
 import { transaction_type } from 'generated/prisma';
+import { DefaultCategories } from 'src/utils/constants/categories';
 
 /**
  * Service responsible for handling category-related operations
@@ -26,38 +27,25 @@ export class CategoriesService {
    * @throws {ConflictException} If a category with the same name and type already exists
    * @throws {Error} For any other unexpected errors
    */
-  /**
-   * Creates a new category
-   * @param {CreateCategoryDto} createCategoryDto - The category data to create
-   * @returns {Promise<Object>} The created category
-   * @throws {ConflictException} If a category with the same name and type already exists
-   * @throws {Error} For any other unexpected errors
-   */
-  /**
-   * Creates a new category with the provided data
-   * @param {number} user_id - The ID of the user creating the category
-   * @param {CreateCategoryDto} createCategoryDto - The category data to create
-   * @returns {Promise<Object>} The created category with all fields including color and icon
-   * @throws {ConflictException} If a category with the same name and type already exists
-   * @throws {Error} For any other unexpected errors
-   */
   async create(user_id: number, createCategoryDto: CreateCategoryDto) {
     try {
       const { color, icon, ...rest } = createCategoryDto;
-      
+
       const res = await this.prismaService.categories.create({
-        data: { 
+        data: {
           ...rest,
           color: color || '#3B82F6', // Default color if not provided
-          icon: icon || 'tag',       // Default icon if not provided
-          user_id 
+          icon: icon || 'tag', // Default icon if not provided
+          user_id,
         },
       });
       return res;
     } catch (error) {
       console.error('Error creating category:', error.message);
       if (error.message.includes('Unique')) {
-        throw new ConflictException('A category with this name and type already exists');
+        throw new ConflictException(
+          'A category with this name and type already exists',
+        );
       } else {
         throw new InternalServerErrorException('Failed to create category');
       }
@@ -65,23 +53,54 @@ export class CategoriesService {
   }
 
   /**
-   * Finds all categories for a specific user
-   * @param {string} id - The ID of the user
-   * @returns {Promise<Array>} List of categories belonging to the user
-   * @throws {ForbiddenException} If the user ID is invalid
-   */
-  /**
    * Retrieves all categories for a specific user
    * @param {string} id - The ID of the user
    * @returns {Promise<Array<Object>>} List of categories belonging to the user
    * @throws {ForbiddenException} If the user ID is invalid
    */
+  async seedDefaultCategories(userId: number): Promise<void> {
+    try {
+      // Create each default category for the user
+      await Promise.all(
+        DefaultCategories.map((category) =>
+          this.prismaService.categories.create({
+            data: {
+              user_id: userId,
+              name: category.name,
+              type: category.type as any, // Type assertion since we know the values match
+              description: category.description,
+              total_budget: 0, // Default budget of 0, can be updated later
+              amount_remaining: 0,
+              color: this.getDefaultColorForCategory(category.type),
+              icon: category.icon,
+            },
+          }),
+        ),
+      );
+    } catch (error) {
+      console.error('Error seeding default categories:', error);
+      // Don't throw error to prevent signup failure due to category seeding
+    }
+  }
+
   /**
-   * Retrieves all categories for a specific user
+   * Gets a default color based on category type
+   * @private
+   */
+  private getDefaultColorForCategory(type: string): string {
+    // Default colors for different category types
+    const colors = {
+      income: '#10B981', // Green for income
+      expense: '#EF4444', // Red for expense
+    };
+    return colors[type] || '#3B82F6'; // Default blue if type not matched
+  }
+
+  /**
+   * Finds all categories for a specific user
    * @param {string} id - The ID of the user
-   * @returns {Promise<Array<Object>>} List of categories belonging to the user with all fields
+   * @returns {Promise<Array>} List of categories belonging to the user
    * @throws {ForbiddenException} If the user ID is invalid
-   * @throws {InternalServerErrorException} If there's an error fetching categories
    */
   async findByUser(id: string) {
     if (!id) {
@@ -188,17 +207,19 @@ export class CategoriesService {
       });
 
       if (existingCategory) {
-        throw new ConflictException('A category with this name and type already exists');
+        throw new ConflictException(
+          'A category with this name and type already exists',
+        );
       }
     }
 
     try {
       const { color, icon, ...rest } = updateCategoryDto;
-      
+
       const updateData = {
         ...rest,
         ...(color !== undefined && { color }), // Only include color if it's provided
-        ...(icon !== undefined && { icon }),   // Only include icon if it's provided
+        ...(icon !== undefined && { icon }), // Only include icon if it's provided
       };
 
       const res = await this.prismaService.categories.update({
@@ -207,7 +228,7 @@ export class CategoriesService {
         },
         data: updateData,
       });
-      
+
       return res;
     } catch (error) {
       console.error('Error updating category:', error.message);

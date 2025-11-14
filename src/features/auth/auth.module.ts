@@ -14,7 +14,7 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-
+import { CategoriesService } from '../Finance/categories/service/categories.service';
 @Module({
   imports: [
     ConfigModule,
@@ -36,6 +36,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
     PrismaService,
     LocalStrategy,
     JwtStrategy,
+    CategoriesService,
     GoogleStrategy,
     GithubStrategy,
     // FacebookStrategy,

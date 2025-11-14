@@ -202,7 +202,7 @@ export class ExpenseService {
   /**
    * Retrieves all expenses for a specific group with summary information
    * @param {number} group_id - The ID of the group
-   * @returns {Promise<{expense: any[], totalAmount: number, unpaidAmount: number}>} 
+   * @returns {Promise<{expense: any[], totalAmount: number, unpaidAmount: number}>}
    *   Object containing expenses, total amount, and unpaid amount
    */
   async findAllByGroup(group_id: number) {
