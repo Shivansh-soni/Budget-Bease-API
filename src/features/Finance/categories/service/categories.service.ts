@@ -73,7 +73,7 @@ export class CategoriesService {
               amount_spent: 0, // Initialize amount_spent to 0
               amount_remaining: 0,
               // color: this.getDefaultColorForCategory(category.type),
-              icon: category.icon || 'tag', // Default icon if not provided
+              icon: (category.icon || 'tag') as any, // Default icon if not provided
             },
           }),
         ),
