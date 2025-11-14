@@ -11,7 +11,7 @@ export const DefaultCategories = [
     type: 'expense',
     description:
       'Daily and weekly purchases for kitchen, including fruits, vegetables, and household kirana items.',
-    icon: 'local_grocery_store',
+    icon: 'local-grocery-store',
   },
   {
     name: 'Rent / Housing EMI',
@@ -25,14 +25,14 @@ export const DefaultCategories = [
     type: 'expense',
     description:
       'Fixed monthly bills: Electricity, water, cooking gas (LPG), mobile recharge, and Wi-Fi/Broadband.',
-    icon: 'flash_on',
+    icon: 'flash-on',
   },
   {
     name: 'Transportation & Fuel',
     type: 'expense',
     description:
       'Cost of commuting, including petrol/diesel for personal vehicles, bus, metro, or auto/cab fares.',
-    icon: 'directions_car',
+    icon: 'directions-car',
   },
   {
     name: 'Education & Fees',
@@ -46,14 +46,14 @@ export const DefaultCategories = [
     type: 'expense',
     description:
       'Monthly allocation towards Mutual Funds (SIP), recurring deposits (RD), FDs, or other market investments.',
-    icon: 'trending_up',
+    icon: 'trending-up',
   },
   {
     name: 'Dining Out & Takeaway',
     type: 'expense',
     description:
       'Discretionary spending on eating out at restaurants, ordering food online, or frequenting small eateries.',
-    icon: 'local_dining',
+    icon: 'local-dining',
   },
   {
     name: 'Personal & Grooming',
@@ -67,6 +67,6 @@ export const DefaultCategories = [
     type: 'expense',
     description:
       'Costs for doctor consultations, medicines, diagnostic tests, and health insurance premiums.',
-    icon: 'local_hospital',
+    icon: 'local-hospital',
   },
 ];
