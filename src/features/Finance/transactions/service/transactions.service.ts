@@ -110,7 +110,7 @@ export class TransactionsService {
       return await this.prismaService.personal_transactions.findUnique({
         where: { transaction_id: id },
         include: {
-          category: { select: { icon: true } },
+          category: { select: { icon: true, name: true } },
         },
       });
     } catch (error) {
