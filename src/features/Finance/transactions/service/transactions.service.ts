@@ -79,6 +79,13 @@ export class TransactionsService {
     try {
       const res = await this.prismaService.personal_transactions.findMany({
         where: { user_id: +user_id },
+        include: {
+          category: {
+            select: {
+              icon: true,
+            },
+          },
+        },
       });
 
       return res;
@@ -102,6 +109,9 @@ export class TransactionsService {
     try {
       return await this.prismaService.personal_transactions.findUnique({
         where: { transaction_id: id },
+        include: {
+          category: { select: { icon: true } },
+        },
       });
     } catch (error) {
       console.log('error');
