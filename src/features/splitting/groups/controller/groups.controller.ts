@@ -13,7 +13,8 @@ import {
 import { GroupsService } from '../service/groups.service';
 import { CreateGroupDto, AddMembersDto } from '../dto/create-group.dto';
 import { UpdateGroupDto } from '../dto/update-group.dto';
-import { JwtAuthGuard } from '@/features/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../../features/auth/guards/jwt-auth.guard';
+
 
 @UseGuards(JwtAuthGuard)
 @Controller('groups')

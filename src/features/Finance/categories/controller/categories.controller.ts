@@ -13,7 +13,7 @@ import {
 import { CategoriesService } from '../service/categories.service';
 import { CreateCategoryDto } from '../dto/create-category.dto';
 import { UpdateCategoryDto } from '../dto/update-category.dto';
-import { JwtAuthGuard } from '@/features/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../../features/auth/guards/jwt-auth.guard';
 import { ApiOkResponse, ApiOperation, ApiBody } from '@nestjs/swagger';
 
 @UseGuards(JwtAuthGuard)

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../../prisma.service';
+import { CategoriesService } from '../Finance/categories/service/categories.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -18,6 +19,12 @@ describe('AuthService', () => {
           useValue: {
             findOne: jest.fn(),
             create: jest.fn(),
+          },
+        },
+        {
+          provide: CategoriesService,
+          useValue: {
+            seedDefaultCategories: jest.fn(),
           },
         },
         {

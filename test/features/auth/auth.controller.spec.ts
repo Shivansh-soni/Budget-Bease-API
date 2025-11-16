@@ -15,6 +15,7 @@ import { JwtStrategy } from '../../../src/features/auth/strategies/jwt.strategy'
 import { LocalStrategy } from '../../../src/features/auth/strategies/local.strategy';
 import { UsersService } from '../../../src/features/users/users.service';
 import { PrismaService } from '../../../src/prisma.service';
+import { CategoriesService } from '../../../src/features/Finance/categories/service/categories.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -46,13 +47,18 @@ describe('AuthController (e2e)', () => {
     role: 'USER',
     DOB: '1990-01-01',
     created_at: new Date(),
-    updated_at: new Date()
+    updated_at: new Date(),
   };
 
   beforeAll(async () => {
     // Mock UsersService
     const mockUsersService = {
       create: jest.fn(),
+    };
+
+    // Mock CategoriesService
+    const mockCategoriesService = {
+      seedDefaultCategories: jest.fn(),
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -73,6 +79,10 @@ describe('AuthController (e2e)', () => {
           useValue: mockUsersService,
         },
         {
+          provide: CategoriesService,
+          useValue: mockCategoriesService,
+        },
+        {
           provide: PrismaService,
           useValue: {},
         },
@@ -90,7 +100,9 @@ describe('AuthController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('POST /auth/register', () => {
@@ -107,7 +119,7 @@ describe('AuthController (e2e)', () => {
         last_name: testUser.last_name,
         username: 'newuser',
         DOB: testUser.DOB,
-        role: 'USER' // Add role to match the actual implementation
+        role: 'USER', // Add role to match the actual implementation
       };
 
       // Mock the create response from usersService
@@ -117,15 +129,19 @@ describe('AuthController (e2e)', () => {
         created_at: new Date(),
         updated_at: new Date(),
         password: 'hashed_password',
-        role: 'USER'
+        role: 'USER',
       };
 
       // Mock the usersService.create method
       (usersService.create as jest.Mock).mockResolvedValueOnce(createdUser);
 
       // Mock JWT signing
-      jest.spyOn(jwtService, 'signAsync').mockResolvedValueOnce('test-access-token');
-      jest.spyOn(jwtService, 'signAsync').mockResolvedValueOnce('test-refresh-token');
+      jest
+        .spyOn(jwtService, 'signAsync')
+        .mockResolvedValueOnce('test-access-token');
+      jest
+        .spyOn(jwtService, 'signAsync')
+        .mockResolvedValueOnce('test-refresh-token');
 
       const response = await request(app.getHttpServer())
         .post('/auth/register')
@@ -134,7 +150,7 @@ describe('AuthController (e2e)', () => {
 
       expect(response.body).toHaveProperty('access_token');
       expect(response.body.user).toHaveProperty('email', registerPayload.email);
-      
+
       // Verify usersService.create was called with the correct data
       const createCall = (usersService.create as jest.Mock).mock.calls[0][0];
       expect(createCall).toMatchObject({
@@ -143,7 +159,7 @@ describe('AuthController (e2e)', () => {
         last_name: registerPayload.last_name,
         username: registerPayload.username,
         DOB: registerPayload.DOB,
-        role: registerPayload.role
+        role: registerPayload.role,
       });
       // Verify password was hashed (starts with $2b$)
       expect(createCall.password).toMatch(/^\$2b\$/);
@@ -155,9 +171,9 @@ describe('AuthController (e2e)', () => {
         name: 'PrismaClientKnownRequestError',
         code: 'P2002',
         meta: { target: ['email'] },
-        message: 'Unique constraint failed on the email'
+        message: 'Unique constraint failed on the email',
       };
-      
+
       (usersService.create as jest.Mock).mockRejectedValueOnce(prismaError);
 
       // Try to register with duplicate email
@@ -170,11 +186,14 @@ describe('AuthController (e2e)', () => {
           last_name: 'User',
           username: 'duplicateuser',
           DOB: '1990-01-01',
-          role: 'USER'
+          role: 'USER',
         })
         .expect(400);
 
-      expect(response.body).toHaveProperty('message', 'Unique constraint failed on the email');
+      expect(response.body).toHaveProperty(
+        'message',
+        'Unique constraint failed on the email',
+      );
       expect(usersService.create).toHaveBeenCalled();
     });
   });
@@ -182,18 +201,20 @@ describe('AuthController (e2e)', () => {
   describe('POST /auth/login', () => {
     beforeEach(() => {
       // Mock the LocalAuthGuard to return a user
-      jest.spyOn(LocalAuthGuard.prototype, 'canActivate').mockImplementation((context: ExecutionContext) => {
-        const req = context.switchToHttp().getRequest();
-        req.user = {
-          email: testUser.email,
-          id: testUser.id,
-          first_name: testUser.first_name,
-          last_name: testUser.last_name,
-          username: testUser.username,
-          role: testUser.role,
-        };
-        return true;
-      });
+      jest
+        .spyOn(LocalAuthGuard.prototype, 'canActivate')
+        .mockImplementation((context: ExecutionContext) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = {
+            email: testUser.email,
+            id: testUser.id,
+            first_name: testUser.first_name,
+            last_name: testUser.last_name,
+            username: testUser.username,
+            role: testUser.role,
+          };
+          return true;
+        });
 
       // Mock the auth service login method
       jest.spyOn(authService, 'login').mockResolvedValue({
@@ -226,9 +247,11 @@ describe('AuthController (e2e)', () => {
 
     it('should not login with invalid password', async () => {
       // Mock the LocalAuthGuard to throw UnauthorizedException
-      jest.spyOn(LocalAuthGuard.prototype, 'canActivate').mockImplementation(() => {
-        throw new UnauthorizedException();
-      });
+      jest
+        .spyOn(LocalAuthGuard.prototype, 'canActivate')
+        .mockImplementation(() => {
+          throw new UnauthorizedException();
+        });
 
       await request(app.getHttpServer())
         .post('/auth/login')
@@ -241,9 +264,11 @@ describe('AuthController (e2e)', () => {
 
     it('should not login with non-existent email', async () => {
       // Mock the LocalAuthGuard to throw UnauthorizedException
-      jest.spyOn(LocalAuthGuard.prototype, 'canActivate').mockImplementation(() => {
-        throw new UnauthorizedException();
-      });
+      jest
+        .spyOn(LocalAuthGuard.prototype, 'canActivate')
+        .mockImplementation(() => {
+          throw new UnauthorizedException();
+        });
 
       await request(app.getHttpServer())
         .post('/auth/login')
