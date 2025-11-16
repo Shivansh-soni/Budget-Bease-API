@@ -55,10 +55,10 @@ async function bootstrap() {
       'JWT-auth',
     )
     .addServer('http://localhost:5001', 'Development Server')
-    .addServer('https://api.budgetbeast.com', 'Production Server')
+    .addServer('https://bb-api.kalakr.in', 'Production Server')
     .setContact(
       'Support Team',
-      'https://budgetbeast.com/support',
+      'https://kalakr.in/support',
       'support@budgetbeast.com',
     )
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
