@@ -56,9 +56,14 @@ export class TransactionsService {
           user.id,
         );
       }
-      return await this.prismaService.personal_transactions.create({
+      const created = await this.prismaService.personal_transactions.create({
         data: payload,
       });
+      return {
+        ...created,
+        id: created.transaction_id,
+        amount: (created as any).amount?.toString?.() ?? created.amount,
+      };
     } catch (error) {
       console.log('error', error.message);
       throw new InternalServerErrorException(error.message);
@@ -88,7 +93,11 @@ export class TransactionsService {
         },
       });
 
-      return res;
+      return res.map((t) => ({
+        ...t,
+        id: t.transaction_id,
+        amount: (t as any).amount?.toString?.() ?? t.amount,
+      }));
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException('something wend wrong');
@@ -107,12 +116,18 @@ export class TransactionsService {
       throw new NotFoundException('Kindly provide a transaction ID');
     }
     try {
-      return await this.prismaService.personal_transactions.findUnique({
+      const found = await this.prismaService.personal_transactions.findUnique({
         where: { transaction_id: id },
         include: {
           category: { select: { icon: true, name: true } },
         },
       });
+      if (!found) return null as any;
+      return {
+        ...found,
+        id: found.transaction_id,
+        amount: (found as any).amount?.toString?.() ?? found.amount,
+      };
     } catch (error) {
       console.log('error');
       throw new Error();
@@ -141,7 +156,11 @@ export class TransactionsService {
         where: { transaction_id: id, user_id: user_id },
         data: updateTransactionDto,
       });
-      return res;
+      return {
+        ...res,
+        id: res.transaction_id,
+        amount: (res as any).amount?.toString?.() ?? res.amount,
+      };
     } catch (error) {
       throw new NotFoundException('Transaction not found');
     }

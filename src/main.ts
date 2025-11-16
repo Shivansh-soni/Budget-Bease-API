@@ -1,53 +1,113 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { ConsoleLogger, ValidationPipe } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Logger,
+  ValidationPipe,
+} from '@nestjs/common';
 import { InternalDisabledLogger } from './utils/newLogger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-const cookieParser = require('cookie-parser');
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ValidationPipe as CustomValidationPipe } from './common/pipes/validation.pipe';
+import { ApiResponseInterceptor } from './common/interceptors/api-response.interceptor';
+import cookieParser from 'cookie-parser';
+import compression from 'compression';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: new InternalDisabledLogger(),
+    cors: true,
   });
 
+  // Security middlewares
+  app.use(helmet());
+  app.use(compression());
+
+  // Rate limiting
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per windowMs
+    }),
+  );
+
+  // Global prefix for API versioning
+  app.setGlobalPrefix('api/v1');
+
+  // Configure Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Budget Beast API')
-    .setDescription('Budget Beast API description')
+    .setDescription(
+      'Comprehensive API for Budget Beast - Personal and Group Finance Management',
+    )
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addServer('http://localhost:5001', 'Development Server')
+    .addServer('https://api.budgetbeast.com', 'Production Server')
+    .setContact(
+      'Support Team',
+      'https://budgetbeast.com/support',
+      'support@budgetbeast.com',
+    )
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document, {
+    explorer: true,
+    swaggerOptions: {
+      filter: true,
+      showRequestDuration: true,
+      persistAuthorization: true,
+    },
+  });
 
   // Enable CORS with appropriate options
   app.enableCors({
     origin: [
-      'http://localhost:3000', // Frontend URL
-      'http://localhost:5001', // Backend URL (for development)
-      'https://accounts.google.com', // Google OAuth
+      'http://localhost:3000', // Local frontend
+      'http://localhost:5001', // Local backend
+      'https://budgetbeast.com', // Production frontend
+      'https://app.budgetbeast.com', // Production app
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // Required for cookies, authorization headers with HTTPS
-    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
   });
 
   // Parse cookies
   app.use(cookieParser());
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, // Strip away any properties that don't have any decorators
-      transform: true, // Automatically transform payloads to be objects typed according to their DTO classes
-      forbidNonWhitelisted: true, // Throw errors if non-whitelisted values are provided
-      transformOptions: {
-        enableImplicitConversion: true, // Convert string query parameters to their corresponding types
-      },
-    }),
+  // Global pipes, filters, and interceptors
+  app.useGlobalPipes(new CustomValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector)),
+    new ApiResponseInterceptor(),
   );
 
   const PORT = process.env.PORT || 5001;
-  await app.listen(PORT);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  await app.listen(PORT, '0.0.0.0');
+
+  const logger = new Logger('Bootstrap');
+  logger.log(`Application is running on: ${await app.getUrl()}`);
+  logger.log(`API Documentation available at: ${await app.getUrl()}/api/docs`);
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('Failed to start application', err);
+  process.exit(1);
+});
